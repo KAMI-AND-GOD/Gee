@@ -9,7 +9,7 @@ func main() {
 		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
 	})
 	r.GET("/hello", func(c *gee.Context) {
-		// expect /hello?name=geektutu
+		// expect /hello?name=kami
 		c.String(http.StatusOK, "hello %s! Your age is %s, you're at %s\n", c.Query("name"),c.Query("age"),c.Path)
 	})
 
