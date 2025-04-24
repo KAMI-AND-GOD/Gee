@@ -83,9 +83,12 @@ func (r *router) handleReq(c *Context) {
 		key:=c.Method +"-" + path
 		c.Params=params
 		handler:=r.handlers[key]
-		handler(c)	
+		c.handlers=append(c.handlers, handler)
 	}else{
-		c.String(http.StatusNotFound, "404 NOT FOUND: %s-%s\n",c.Method, c.Path)
+		c.handlers=append(c.handlers, func(c *Context){
+			c.String(http.StatusNotFound, "404 NOT FOUND: %s-%s\n",c.Method, c.Path)
+		})
 	}
-
+	//handle
+	c.Next()
 }

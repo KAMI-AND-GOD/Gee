@@ -1,8 +1,9 @@
 package gee
 
-import(
-	"net/http"
+import (
 	"log"
+	"net/http"
+	"strings"
 )
 type HandlerFunc func(c *Context)
 
@@ -49,6 +50,10 @@ func (group *RouteGroup) POST(path string,hf HandlerFunc){
 	group.engine.router.addRoute("POST",newPath,hf)
 }
 
+func (group *RouteGroup) Use(middleware HandlerFunc){
+	group.middlewares=append(group.middlewares, middleware)
+}
+
 func (e *Engine) Run(port string){
 	http.ListenAndServe(port,e)//e.ServeHTTP()会在http请求过来后自动调用
 }
@@ -56,6 +61,13 @@ func (e *Engine) Run(port string){
 //实现http.ListenAndServe(string , http.Handler)
 //http.Handler接口 需要实现ServeHTTP(w http.ResponseWriter,r *http.Request)
 func (e *Engine) ServeHTTP(w http.ResponseWriter,r *http.Request){
+	var middlewares []HandlerFunc
+	for _,group:=range e.groups{
+		if strings.HasPrefix(r.URL.Path,group.prefix){
+			middlewares=append(middlewares, group.middlewares...)
+		}
+	}
 	c:=NewContext(w,r)
+	c.handlers=middlewares
 	e.router.handleReq(c)
 }

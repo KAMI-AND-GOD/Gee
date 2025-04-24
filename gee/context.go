@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	
 )
 type H map[string]interface{}
 
@@ -14,6 +15,8 @@ type Context struct{
 	Path string
 	Params map[string]string
 	StatusCode int
+	handlers []HandlerFunc
+	index int
 }
 
 func NewContext(w http.ResponseWriter,r *http.Request) *Context{
@@ -22,6 +25,20 @@ func NewContext(w http.ResponseWriter,r *http.Request) *Context{
 		Req: r,
 		Method: r.Method,
 		Path: r.URL.Path,
+		index: -1,
+		handlers: []HandlerFunc{},
+	}
+}
+
+func (c *Context)Next(){
+	c.index++
+	
+	if c.index<len(c.handlers){
+		
+		fmt.Printf("handle: handlers-index:%d\n", c.index)
+		c.handlers[c.index](c)
+	}else{
+		fmt.Printf("index:%d,handler: NULL\n",c.index)
 	}
 }
 
@@ -70,4 +87,9 @@ func (c *Context) HTML(code int, html string) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
 	c.Writer.Write([]byte(html))
+}
+
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, H{"message": err})
 }
