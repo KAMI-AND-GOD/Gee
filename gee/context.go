@@ -6,7 +6,6 @@ import (
 	"net/http"
 	
 )
-type H map[string]interface{}
 
 type Context struct{
 	Writer http.ResponseWriter
@@ -17,6 +16,7 @@ type Context struct{
 	StatusCode int
 	handlers []HandlerFunc
 	index int
+	engine *Engine
 }
 
 func NewContext(w http.ResponseWriter,r *http.Request) *Context{
@@ -83,10 +83,17 @@ func (c *Context) JSON(code int, js interface{}){
 	}
 }
 
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(code int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	c.Writer.Write([]byte(html))
+	// 执行指定名称的模板并将结果写入响应
+	// 参数说明:
+	// - c.Writer: http.ResponseWriter 接口，用于输出模板渲染结果
+	// - name: 要执行的模板名称 (对应模板定义中的 {{define "name"}})
+	// - data: 传递给模板的数据对象 (在模板中通过 {{.}} 或 {{.FieldName}} 访问)
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.Fail(500, err.Error())
+	}
 }
 
 func (c *Context) Fail(code int, err string) {
